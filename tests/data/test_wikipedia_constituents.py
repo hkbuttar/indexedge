@@ -59,6 +59,35 @@ def test_clean_changes_yfinance_normalization_for_dotted_tickers():
     assert cleaned.iloc[0]["added_yfinance"] == "BF-B"
 
 
+def test_clean_changes_coalesces_extra_trailing_columns_into_reason():
+    # Real production case: Wikipedia's live page returned a 7th column for
+    # exactly one historical row, whose reason text got split across two
+    # <td> cells by malformed markup on the page itself -- not a genuine
+    # schema change. A hardcoded 6-column assignment crashed on this
+    # (ValueError: Length mismatch); the fix coalesces any columns beyond
+    # the 5 core fields into `reason` instead of dropping data or crashing.
+    raw = pd.DataFrame({
+        "Effective Date": ["2020-01-01", "2020-02-01"],
+        "a": ["TSLA", None], "b": ["Tesla", None], "c": [None, "AIV"], "d": [None, "Apt Inv Mgmt"],
+        "Reason": ["Market cap change", "Removed."],
+        "Overflow": [None, "extra split text"],
+    })
+    cleaned = clean_changes(raw)
+    assert len(cleaned) == 2
+    assert cleaned.iloc[0]["reason"] == "Market cap change"
+    assert cleaned.iloc[1]["reason"] == "Removed. extra split text"
+
+
+def test_clean_changes_raises_on_too_few_columns():
+    raw = pd.DataFrame({
+        "Effective Date": ["2020-01-01"],
+        "a": ["TSLA"], "b": ["Tesla"], "c": [None], "d": [None],
+        # no reason column at all -- only 5 total columns
+    })
+    with pytest.raises(ValueError):
+        clean_changes(raw)
+
+
 def test_fetch_constituents_and_changes_uses_cache_when_present(tmp_path, monkeypatch):
     import data.wikipedia_constituents as wc
 

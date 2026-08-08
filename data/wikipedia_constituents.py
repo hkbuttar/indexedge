@@ -64,6 +64,29 @@ def clean_current(raw: pd.DataFrame) -> pd.DataFrame:
 
 def clean_changes(raw: pd.DataFrame) -> pd.DataFrame:
     df = raw.copy()
+    # Real production failure, not hypothetical: Wikipedia's changes table
+    # fetched with 7 columns instead of the usual 6. Traced to one specific
+    # historical row (a 2023 JEF/SPB spinoff) whose reason text was split
+    # across two <td> cells by malformed markup on the page itself -- not a
+    # genuine schema change, and the extra column was ~100% empty except for
+    # that one row's overflow text. A hardcoded 6-name assignment crashed on
+    # this (`ValueError: Length mismatch`) rather than either dropping real
+    # content or failing gracefully. Fix: every column from `core_columns`
+    # onward is treated as "reason" and concatenated -- a no-op on the
+    # normal 6-column fetch, and content-preserving (not data-dropping) on
+    # a fetch like this one.
+    core_columns = ["effective_date", "added_ticker", "added_security", "removed_ticker", "removed_security"]
+    if df.shape[1] <= len(core_columns):
+        raise ValueError(
+            f"expected at least {len(core_columns) + 1} columns in Wikipedia's changes "
+            f"table (5 core fields + reason), got {df.shape[1]}: {df.columns.tolist()} -- "
+            "the page's real structure may have changed."
+        )
+    reason = df.iloc[:, len(core_columns):].apply(
+        lambda row: " ".join(str(v).strip() for v in row if pd.notna(v)), axis=1
+    )
+    df = df.iloc[:, :len(core_columns)].copy()
+    df["reason"] = reason
     df.columns = ["effective_date", "added_ticker", "added_security",
                   "removed_ticker", "removed_security", "reason"]
     df["effective_date"] = pd.to_datetime(df["effective_date"], errors="coerce")
