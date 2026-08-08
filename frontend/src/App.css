@@ -1,0 +1,62 @@
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+.app-header {
+  margin-bottom: 24px;
+}
+
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--gridline);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--series-1);
+  font-weight: 600;
+}
+
+select {
+  font: inherit;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 20px;
+}
+
+.findings-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: grid;
+  gap: 8px;
+}

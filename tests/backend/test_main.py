@@ -18,6 +18,7 @@ REQUIRED_ROUTES = {
     "/health",
     "/api/replication/full",
     "/api/replication/sampling",
+    "/api/multi-objective",
     "/api/smartbeta",
     "/api/regime",
     "/api/liquidity",
@@ -57,6 +58,19 @@ def test_replication_sampling_respects_target_counts_param():
     assert body["target_counts"] == [30, 60]
     methods = {row["method"] for row in body["curve"]}
     assert methods == {"stratified", "optimization", "lasso"}
+
+
+def test_multi_objective_frontier_is_monotonic_in_turnover_budget():
+    response = client.get("/api/multi-objective", params={"turnover_budgets": "0.1,0.5,1.0"})
+    assert response.status_code == 200
+    frontier = response.json()["frontier"]
+    unconstrained = sorted(
+        (row for row in frontier if row["factor_target"] == response.json()["factor_targets"]["unconstrained"]),
+        key=lambda r: r["turnover_budget"],
+    )
+    tes = [row["tracking_error"] for row in unconstrained]
+    for earlier, later in zip(tes, tes[1:]):
+        assert later <= earlier + 1e-6
 
 
 def test_smartbeta_reports_all_four_variants():

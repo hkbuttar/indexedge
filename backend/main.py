@@ -43,6 +43,7 @@ from liquidity.impact import avg_daily_dollar_volume
 from regime.conditional import summarize_regime_conditional_performance
 from regime.volatility_tercile import classify_regimes, rolling_realized_vol
 from replication.full_replication import rebalance_weights, simulate_cap_weighted_replication
+from replication.multi_objective import trace_pareto_frontier
 from replication.sampling_evaluation import evaluate_sampling_methods, summarize_curve
 from risk.attribution import brinson_fachler_attribution, factor_exposure_differential
 from risk.kill_switch import KillSwitch, check_relative_drawdown_limit, check_tracking_error_limit
@@ -133,6 +134,56 @@ def replication_sampling(target_counts: str = Query("30,60,100")) -> dict:
         _STATE["sector_by_symbol"], counts,
     )
     return to_jsonable({"target_counts": counts, "curve": summarize_curve(detail)})
+
+
+@app.get("/api/multi-objective")
+def multi_objective(
+    turnover_budgets: str = Query("0.05,0.1,0.2,0.3,0.5,0.75,1.0,1.5,2.0"),
+) -> dict:
+    """Traces the tracking-error-vs-turnover Pareto frontier (Step 5) at
+    the most recent real rebalance, starting from the multi-factor tilt's
+    actual prior holding (reusing `_STATE`'s already-computed weights
+    rather than re-deriving them, unlike the standalone
+    `replication/run_multi_objective.py` script this mirrors)."""
+    budgets = [float(x) for x in turnover_budgets.split(",")]
+    weights_by_date = _STATE["weights_by_date_by_strategy"]["multi_factor"]
+    dates = sorted(weights_by_date.keys())
+    if len(dates) < 2:
+        return to_jsonable({"error": "not enough rebalance history to trace a frontier"})
+    t_prev, t_curr = dates[-2], dates[-1]
+    prev_weights = weights_by_date[t_prev]
+
+    prices, all_returns = _STATE["prices"], _STATE["prices"].pct_change()
+    pos = all_returns.index.searchsorted(t_curr)
+    if pos < 252:
+        return to_jsonable({"error": "not enough trailing history before the latest rebalance"})
+    trailing_returns = all_returns.iloc[pos - 252: pos]
+    period_start = prices.index[pos]
+
+    members = set(_STATE["membership"].loc[_STATE["membership"]["rebalance_date"] == t_curr, "symbol"])
+    ic_weights = trailing_ic_weights(_STATE["factor_scores"], _STATE["fwd_returns"], prices.index, t_curr)
+    composite = composite_score(_STATE["factor_scores"], ic_weights, period_start)
+    candidates = [s for s in members if s in trailing_returns.columns and trailing_returns[s].notna().all()
+                  and s in composite.index and pd.notna(composite[s])]
+
+    cap_row = _STATE["market_caps"].loc[_STATE["market_caps"].index[_STATE["market_caps"].index.searchsorted(t_curr)]]
+    bench_candidates = [s for s in members if s in cap_row.index and pd.notna(cap_row[s]) and cap_row[s] > 0]
+    bench_weights = cap_row[bench_candidates] / cap_row[bench_candidates].sum()
+    benchmark_returns = trailing_returns[bench_candidates].mul(bench_weights, axis=1).sum(axis=1)
+
+    exposure_median = float(composite[candidates].median())
+    exposure_high = float(composite[candidates].quantile(0.75))
+    factor_targets = [-10.0, exposure_median, exposure_high]
+
+    frontier = trace_pareto_frontier(
+        trailing_returns[candidates], benchmark_returns, prev_weights, composite[candidates],
+        factor_targets=factor_targets, turnover_budgets=budgets,
+    )
+    return to_jsonable({
+        "rebalance_date": t_curr, "n_candidates": len(candidates),
+        "factor_targets": {"unconstrained": factor_targets[0], "median": factor_targets[1], "p75": factor_targets[2]},
+        "frontier": frontier,
+    })
 
 
 @app.get("/api/smartbeta")
@@ -277,6 +328,8 @@ def results() -> dict:
 
     comparison = pd.read_csv(comparison_path)
     sampling = pd.read_csv(sampling_path) if sampling_path.exists() else pd.DataFrame()
-    findings = findings_path.read_text().splitlines() if findings_path.exists() else []
+    # findings.txt's own "- " bullet prefix is for reading the file directly;
+    # the frontend renders these as <li> items, which supplies its own bullet.
+    findings = [line.removeprefix("- ") for line in findings_path.read_text().splitlines()] if findings_path.exists() else []
 
     return to_jsonable({"comparison": comparison, "sampling_comparison": sampling, "findings": findings})
