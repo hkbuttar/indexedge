@@ -3,7 +3,7 @@
 S&P 500 replication and smart-beta construction, built on real market data end to end: point-in-time constituent reconstruction, three genuinely distinct optimized-sampling methods, four smart-beta variants, multi-objective portfolio construction, regime-conditional performance, capacity/liquidity-aware cost modeling, and block-bootstrap statistical validation. No synthetic data anywhere — every number in this README comes from real yfinance/Wikipedia data cached locally and computed by the code in this repository.
 
 > **Status**: Backend, frontend, and research notebook all run against real cached data. 159 tests passing.
-> **Live demo**: [indexedge.vercel.app](https://indexedge.vercel.app/) (backend on Render's free tier — may take ~20–30s to respond on first load after idle, since the instance spins down and needs to finish its one-time startup computation; see [Dashboard](#dashboard)).
+> **Live demo**: [indexedge.vercel.app](https://indexedge.vercel.app/).
 
 ---
 
@@ -129,12 +129,12 @@ Two presentation layers over the same real computation, not two separate impleme
 
 **Running locally**: `uvicorn backend.main:app --reload` (backend, ~20–25s startup once data is cached) + `cd frontend && npm install && npm run dev` (frontend, reads `VITE_API_BASE_URL` from `frontend/.env`).
 
-**Deploying** (Render for the backend, Vercel for the frontend — both auto-deploy from GitHub on every push once connected):
+**Deploying** (Render for the backend, Vercel for the frontend — both auto-deploy from GitHub on every push once connected). Live at [indexedge-api.onrender.com](https://indexedge-api.onrender.com) (backend) and [indexedge.vercel.app](https://indexedge.vercel.app/) (frontend):
 
 1. Push to GitHub (or use an existing remote — `git remote -v` to check).
-2. **Backend, Render**: [dashboard.render.com](https://dashboard.render.com) → New → Blueprint → connect the repo. Render reads `render.yaml` and provisions the `indexedge-api` web service automatically (no manual config needed). First deploy's build step also fetches real data (`python -m data.run_ingest`, ~5–6 min — see `render.yaml`'s own comments for the tradeoff this implies), then the server itself takes another ~20–25s to finish its one-time startup computation before `/health` responds. Leave `ALLOWED_ORIGINS` unset for now. Once live, copy the service URL (`https://indexedge-api.onrender.com`-style) and confirm with `curl <url>/health`.
-3. **Frontend, Vercel**: [vercel.com/new](https://vercel.com/new) → import the same repo → set **Root Directory** to `frontend`. Vercel auto-detects the Vite app; no build-command changes needed. Add an environment variable `VITE_API_BASE_URL` set to the Render URL from step 2, then deploy. Copy the resulting Vercel URL.
-4. **Close the loop**: back on Render, set the `indexedge-api` service's `ALLOWED_ORIGINS` env var to the Vercel URL (comma-separated if there's more than one, e.g. a preview + production URL), which triggers a redeploy to pick it up.
+2. **Backend, Render**: [dashboard.render.com](https://dashboard.render.com) → New → Blueprint → connect the repo. Render reads `render.yaml` and provisions the `indexedge-api` web service automatically (no manual config needed). First deploy's build step also fetches real data (`python -m data.run_ingest`, ~5–6 min — see `render.yaml`'s own comments for the tradeoff this implies), then the server itself takes another ~20–25s to finish its one-time startup computation before `/health` responds (a real memory-fragmentation issue in that startup path was diagnosed and fixed against Render's free-tier 512MB limit — see `replication/full_replication.py` and `replication/sampling_evaluation.py`'s docstrings). Leave `ALLOWED_ORIGINS` unset for now. Once live, copy the service URL and confirm with `curl <url>/health`.
+3. **Frontend, Vercel**: [vercel.com/new](https://vercel.com/new) → import the same repo → set **Root Directory** to `frontend`. Vercel auto-detects the Vite app; no build-command changes needed. Add an environment variable `VITE_API_BASE_URL` set to the Render URL from step 2 — **this is a build-time Vite variable, baked into the static bundle, not read at runtime**, so setting it after the first deploy requires triggering a new build (Deployments tab → Redeploy) before it takes effect. Deploy, then copy the resulting Vercel URL.
+4. **Close the loop**: back on Render, set the `indexedge-api` service's `ALLOWED_ORIGINS` env var to the Vercel URL (comma-separated if there's more than one, e.g. a preview + production URL), which triggers a redeploy to pick it up. A generic `TypeError: Failed to fetch` in the browser (rather than an HTTP error status) means either this step or step 3's env var is still missing — check the browser console's actual underlying error (a connection error points to step 3; an explicit CORS message points to this step) before assuming the backend itself is broken.
 5. Open the Vercel URL and confirm the dashboard loads real data with no CORS errors in the browser console. Render's free tier spins down after inactivity, so the first request after idle time re-pays the ~20–25s startup cost from step 2.
 
 ---
