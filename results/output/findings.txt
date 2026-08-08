@@ -1,0 +1,9 @@
+- At $10,000,000 AUM, quality beat full replication after costs (+3.06% annualized difference).
+- At $100,000,000 AUM, quality beat full replication after costs (+2.93% annualized difference).
+- At $1,000,000,000 AUM, quality beat full replication after costs (+2.50% annualized difference).
+- In volatile regimes at $10,000,000 AUM, min_vol underperformed full replication by -8.30% annualized; the low-vol claim is therefore regime-specific evidence, not a universal conclusion.
+- In volatile regimes at $100,000,000 AUM, min_vol underperformed full replication by -12.94% annualized; the low-vol claim is therefore regime-specific evidence, not a universal conclusion.
+- In volatile regimes at $1,000,000,000 AUM, min_vol underperformed full replication by -26.92% annualized; the low-vol claim is therefore regime-specific evidence, not a universal conclusion.
+- At target 30 names, optimization had the lowest mean out-of-sample tracking error (3.23%); LASSO minus optimization TE was +9.01%.
+- At target 60 names, optimization had the lowest mean out-of-sample tracking error (2.30%); LASSO minus optimization TE was +4.57%.
+- At target 100 names, optimization had the lowest mean out-of-sample tracking error (1.94%); LASSO minus optimization TE was +1.88%.

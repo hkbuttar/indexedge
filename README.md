@@ -24,3 +24,18 @@ python -m risk.run_risk_layer
 The limits are disclosed operating conventions, not values fitted to the backtest. Attribution is
 renormalized over symbols with both a known sector and period return, so excluded coverage must be
 reviewed alongside the decomposition.
+
+## Step 10 — Results and honest comparison
+
+`results.comparison` produces a normalized strategy × AUM × regime table containing name count,
+one-way turnover, gross and cost-adjusted return, Sharpe ratio, tracking error, and block-bootstrap
+confidence intervals. Sampling methods retain their target and realized name counts in a separate
+out-of-sample comparison because crossing sampling configurations with smart-beta variants would
+describe portfolios that were never constructed.
+
+Run `python -m results.run_full_comparison` to write `results/output/full_results.csv`,
+`sampling_comparison.csv`, and `findings.txt`. Findings are derived from the result tables: they state
+whether the best smart-beta portfolio beats full replication after costs at each AUM, whether min-vol
+outperforms specifically in volatile regimes, and how LASSO differs from direct optimization at each
+name-count target. Negative and inconclusive outcomes are retained rather than replaced with a fixed
+narrative.
