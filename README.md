@@ -2,7 +2,8 @@
 
 S&P 500 replication and smart-beta construction, built on real market data end to end: point-in-time constituent reconstruction, three genuinely distinct optimized-sampling methods, four smart-beta variants, multi-objective portfolio construction, regime-conditional performance, capacity/liquidity-aware cost modeling, and block-bootstrap statistical validation. No synthetic data anywhere — every number in this README comes from real yfinance/Wikipedia data cached locally and computed by the code in this repository.
 
-> **Status**: Backend, frontend, and research notebook all run against real cached data. 150 tests passing.
+> **Status**: Backend, frontend, and research notebook all run against real cached data. 159 tests passing.
+> **Live demo**: [indexedge.vercel.app](https://indexedge.vercel.app/) (backend on Render's free tier — may take ~20–30s to respond on first load after idle, since the instance spins down and needs to finish its one-time startup computation; see [Dashboard](#dashboard)).
 
 ---
 
