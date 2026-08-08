@@ -46,6 +46,8 @@ from pathlib import Path
 import pandas as pd
 import yfinance as yf
 
+from data._retry import retry_with_backoff
+
 CACHE_DIR = Path(__file__).parent / "cache" / "shares_outstanding"
 ANCHOR_CACHE_DIR = Path(__file__).parent / "cache" / "shares_anchor"
 
@@ -61,10 +63,7 @@ def fetch_symbol_shares_outstanding(symbol: str, force_refresh: bool = False) ->
         return None if cached.empty else cached["shares"]
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    try:
-        raw = yf.Ticker(symbol).get_shares_full(start="1990-01-01")
-    except Exception:
-        raw = None
+    raw = retry_with_backoff(lambda: yf.Ticker(symbol).get_shares_full(start="1990-01-01"))
 
     if raw is None or len(raw) == 0:
         pd.DataFrame().to_parquet(path)
@@ -106,10 +105,7 @@ def fetch_symbol_shares_anchor(symbol: str, force_refresh: bool = False) -> floa
         return None if cached.empty else float(cached["shares"].iloc[0])
 
     ANCHOR_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    try:
-        value = yf.Ticker(symbol).info.get("sharesOutstanding")
-    except Exception:
-        value = None
+    value = retry_with_backoff(lambda: yf.Ticker(symbol).info.get("sharesOutstanding"))
 
     pd.DataFrame({"shares": [value]} if value else []).to_parquet(path)
     return float(value) if value else None

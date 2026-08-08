@@ -66,13 +66,24 @@ def main(start: str, end: str) -> None:
     shares_map, shares_missing = fetch_universe_shares_outstanding(priced_symbols)
     print(f"  {len(shares_map)}/{len(priced_symbols)} fetched, {len(shares_missing)} missing")
 
-    print(f"\nFetching dual-class share anchors for {len(priced_symbols)} priced symbols...")
-    anchors = fetch_universe_shares_anchors(priced_symbols)
-    print(f"  {len(anchors)}/{len(priced_symbols)} fetched")
-
+    # Fundamentals fetched before dual-class anchors, not after: a real
+    # production run was cut off partway through this sequential,
+    # per-symbol block (a clean cutoff around the 350th of 503 symbols,
+    # consistent with either a build-step time limit or Yahoo throttling
+    # after many rapid sequential requests -- retried with backoff in
+    # data/_retry.py, which helps if it was transient but not if it's a
+    # hard block). If truncation happens again, this ordering sacrifices
+    # the dual-class anchor correction (a narrow fix for ~3 known ticker
+    # pairs, see data/shares_outstanding.py) rather than fundamentals
+    # (which feeds the quality and multi-factor smart-beta variants
+    # broadly) -- the more valuable dataset survives a partial run.
     print(f"\nFetching current-snapshot fundamentals for {len(current)} current constituents...")
     fundamentals, fundamentals_missing = fetch_universe_fundamentals(sorted(current["yfinance_symbol"].unique()))
     print(f"  {len(fundamentals)}/{len(current)} fetched, {len(fundamentals_missing)} missing: {fundamentals_missing}")
+
+    print(f"\nFetching dual-class share anchors for {len(priced_symbols)} priced symbols...")
+    anchors = fetch_universe_shares_anchors(priced_symbols)
+    print(f"  {len(anchors)}/{len(priced_symbols)} fetched")
 
     print("\nDone.")
 

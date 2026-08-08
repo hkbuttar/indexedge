@@ -26,6 +26,8 @@ from pathlib import Path
 import pandas as pd
 import yfinance as yf
 
+from data._retry import retry_with_backoff
+
 CACHE_DIR = Path(__file__).parent / "cache" / "fundamentals"
 
 # Fields used by smartbeta/quality.py's quality score, plus sector/market cap
@@ -49,10 +51,7 @@ def fetch_symbol_fundamentals(symbol: str, force_refresh: bool = False) -> dict 
         return None if cached.empty else cached.iloc[0].to_dict()
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    try:
-        info = yf.Ticker(symbol).info
-    except Exception:
-        info = {}
+    info = retry_with_backoff(lambda: yf.Ticker(symbol).info) or {}
 
     row = {field: info.get(field) for field in FIELDS}
     has_data = any(v is not None for v in row.values())
