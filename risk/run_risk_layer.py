@@ -24,8 +24,7 @@ from liquidity.impact import avg_daily_dollar_volume
 from regime.volatility_tercile import rolling_realized_vol
 from replication.full_replication import rebalance_weights
 from risk.attribution import brinson_fachler_attribution, factor_exposure_differential
-from risk.kill_switch import KillSwitch, check_relative_drawdown_limit, check_tracking_error_limit, relative_value_series
-from risk.tracking_error import summarize_tracking
+from risk.kill_switch import KillSwitch, check_relative_drawdown_limit, check_tracking_error_limit
 from smartbeta.backtest import simulate_all_variants_with_weights
 from smartbeta.multi_factor import composite_score, trailing_ic_weights
 from smartbeta.run_smartbeta_comparison import build_backtest_inputs
@@ -79,19 +78,12 @@ def main(start: str, end: str) -> None:
         adjusted_returns, _ = cost_adjusted_returns(returns, weights_by_date, AUM, daily_vol, dollar_volume)
 
         te_check = check_tracking_error_limit(adjusted_returns, benchmark_returns)
-        dd_check = check_relative_drawdown_limit(adjusted_returns, benchmark_returns)
-        relative_value = relative_value_series(adjusted_returns, benchmark_returns)
-        from backtest.metrics import running_drawdown
-        max_relative_drawdown = (
-            float((1 - relative_value / relative_value.cummax().clip(lower=1.0)).max())
-            if not relative_value.empty
-            else float("nan")
-        )
+        dd_check = check_relative_drawdown_limit(adjusted_returns, benchmark_returns)  # now itself max-ever, not just current
 
         switch = KillSwitch()
         switch.check([te_check, dd_check])
         print(f"  {name:14s} {te_check.detail:45s} | {dd_check.detail:50s} | "
-              f"max_relative_drawdown_ever={max_relative_drawdown:.4f} | triggered={switch.triggered} {switch.trigger_reasons}")
+              f"triggered={switch.triggered} {switch.trigger_reasons}")
 
     print("\nSee regime/run_regime_conditional.py for the fourth lens (calm/normal/volatile performance breakdown, Step 6).")
 
