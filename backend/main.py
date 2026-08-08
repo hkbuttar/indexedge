@@ -1,4 +1,4 @@
-"""IndexEdge API: one endpoint per module built across Steps 2-10, each a
+"""IndexEdge API: one endpoint per analytical module in this project, each a
 thin wrapper over that module's own functions -- no computation lives here
 that doesn't already live in the module it exposes. Pattern (route
 structure, CORS, `to_jsonable`) reused from riskdesk's `backend/main.py`.
@@ -140,7 +140,7 @@ def replication_sampling(target_counts: str = Query("30,60,100")) -> dict:
 def multi_objective(
     turnover_budgets: str = Query("0.05,0.1,0.2,0.3,0.5,0.75,1.0,1.5,2.0"),
 ) -> dict:
-    """Traces the tracking-error-vs-turnover Pareto frontier (Step 5) at
+    """Traces the tracking-error-vs-turnover Pareto frontier at
     the most recent real rebalance, starting from the multi-factor tilt's
     actual prior holding (reusing `_STATE`'s already-computed weights
     rather than re-deriving them, unlike the standalone

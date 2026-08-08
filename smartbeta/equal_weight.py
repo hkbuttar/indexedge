@@ -1,10 +1,9 @@
 """Equal-weight smart-beta: 1/N across point-in-time constituents with a
 tradeable price at the rebalance date. No return or fundamentals data used
 -- this is the "dumbest" baseline every other smart-beta variant should beat
-to justify its own added complexity, deliberately included for that reason
-(the plan's Step 10 asks whether any smart-beta variant beats simpler
-alternatives once real costs are included; equal-weight is the simplest
-possible one).
+to justify its own added complexity, deliberately included to test whether
+any smart-beta variant beats simpler alternatives once real costs are
+included; equal-weight is the simplest possible one.
 """
 
 from __future__ import annotations

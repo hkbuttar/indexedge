@@ -1,5 +1,5 @@
 """Real fundamentals via yfinance's `Ticker.info`, for the quality smart-beta
-factor in `smartbeta/quality.py` (Step 4). This is current-snapshot data
+factor in `smartbeta/quality.py`. This is current-snapshot data
 only -- yfinance does not expose point-in-time historical fundamentals, so
 every symbol's fundamentals here reflect whatever yfinance currently
 reports, not the fundamentals as of a specific historical rebalance date.

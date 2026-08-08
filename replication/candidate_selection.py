@@ -1,5 +1,5 @@
 """Shared candidate-preselection helper used by both the optimization-based
-and stratified sampling methods in this Step 3 comparison. LASSO (the third
+and stratified sampling methods. LASSO (the third
 method) deliberately does NOT use this -- its whole point is that sparsity
 emerges endogenously from L1 regularization over the *full* membership, not
 from a market-cap preselection step, which is the real methodological

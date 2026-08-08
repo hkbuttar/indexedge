@@ -1,8 +1,8 @@
-"""Runs the Step 4 smart-beta comparison end-to-end against real cached
+"""Runs the smart-beta comparison end-to-end against real cached
 data and reports each variant's annualized return, volatility, and tracking
-error against Step 2's full replication over the whole backtest window.
+error against full replication over the whole backtest window.
 Simulation itself lives in `backtest.simulate_all_variants`, shared with
-`regime/`'s per-regime performance breakdown (Step 6).
+`regime/`'s per-regime performance breakdown.
 
 Min-vol and multi-factor's momentum/low-vol components are fit walk-forward
 (trailing lookback only, as of each rebalance date -- no look-ahead).

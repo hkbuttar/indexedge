@@ -1,8 +1,8 @@
 """Backtest performance metrics: CAGR, Sharpe, Sortino, drawdown, win rate.
 Ported directly from pairtrade-lab-1's `backtest/metrics.py` (same formulas,
 same 252-trading-day annualization, same zero-vol epsilon guard) for
-methodological continuity with the statistical-rigor standard the plan asks
-this step to match. Tracking error is intentionally NOT duplicated here --
+methodological continuity with this portfolio's statistical-rigor standard.
+Tracking error is intentionally NOT duplicated here --
 `risk/tracking_error.py` already owns that definition project-wide, and
 `backtest/bootstrap.py` calls it directly.
 """

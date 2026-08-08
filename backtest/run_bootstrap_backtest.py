@@ -1,8 +1,8 @@
-"""Runs the Step 8 cost-adjusted, block-bootstrap backtest against real
+"""Runs the cost-adjusted, block-bootstrap backtest against real
 cached data: for each smart-beta variant, applies real rebalancing costs
-(Step 7's impact model, via `costs/transaction_costs.py`) at a disclosed
-AUM, then block-bootstraps CAGR, Sharpe, Sortino, max drawdown, win rate,
-and tracking error (vs Step 2's full replication) with 95% confidence
+(the impact model in `liquidity/`, via `costs/transaction_costs.py`) at a
+disclosed AUM, then block-bootstraps CAGR, Sharpe, Sortino, max drawdown,
+win rate, and tracking error (vs full replication) with 95% confidence
 intervals -- the statistical-rigor standard reused from BookMaker,
 ExecEdge, and PairTrade Lab (`backtest/bootstrap.py`).
 
@@ -22,7 +22,7 @@ from regime.volatility_tercile import rolling_realized_vol
 from smartbeta.backtest import simulate_all_variants_with_weights
 from smartbeta.run_smartbeta_comparison import build_backtest_inputs
 
-AUM = 100_000_000  # disclosed representative institutional size for this step's headline table
+AUM = 100_000_000  # disclosed representative institutional size for the headline table
 BLOCK_LENGTH = 20
 N_RESAMPLES = 2000
 

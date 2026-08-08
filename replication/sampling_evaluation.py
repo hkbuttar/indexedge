@@ -1,5 +1,5 @@
-"""Walk-forward comparison of the three Step 3 sampling methods
-(stratified, cvxpy optimization, LASSO) against Step 2's full-replication
+"""Walk-forward comparison of the three sampling methods
+(stratified, cvxpy optimization, LASSO) against the full-replication
 portfolio, producing the tracking-error-vs-name-count curve.
 
 Walk-forward, not in-sample: at each historical rebalance date, every
@@ -10,14 +10,14 @@ computed on THAT forward, out-of-sample period. Reporting in-sample fit
 quality as if it were achievable tracking error would be a fabricated
 result -- the whole reason for the trailing/forward split.
 
-The benchmark being tracked is Step 2's own full-replication portfolio
+The benchmark being tracked is the project's own full-replication portfolio
 value series, not the raw S&P 500 index directly. This is a deliberate
 layering, not a simplification: it isolates "how much tracking error does
 sampling N<full names cost" from "how much tracking error does this
 project's full replication already carry against the real index due to
 data-coverage/free-float limitations" (documented in
-`full_replication.py`). Step 10 recombines both layers for the honest
-end-to-end comparison against the real index.
+`full_replication.py`). `results/comparison.py` recombines both layers for
+the honest end-to-end comparison against the real index.
 
 A candidate is only eligible for the optimization and LASSO methods at a
 given date if it has a *complete* trailing lookback window of return data

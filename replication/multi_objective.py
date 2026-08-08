@@ -1,11 +1,14 @@
 """Multi-objective portfolio construction: jointly balances tracking error,
 turnover, and factor exposure in a single convex problem, rather than
 picking a name-count or a factor tilt strength first and only checking
-turnover/tracking error afterward the way Steps 3-4 do.
+turnover/tracking error afterward the way the sampling and smart-beta
+constructions elsewhere in this project do.
 
 ## Why epsilon-constraint, not weighted-sum scalarization
 
-The plan calls for either "weighted-sum or Pareto-frontier approach."
+Two standard approaches exist for combining several objectives into one
+solvable problem: weighted-sum scalarization, or tracing the Pareto
+frontier directly via an epsilon-constraint formulation.
 Weighted-sum scalarization (minimize `(1-gamma)*TE + gamma*turnover`) was
 tried first and rejected: tracking-error-variance terms here are ~1e-4 to
 1e-6 in magnitude (squared daily return differences) while L1 turnover
@@ -28,7 +31,7 @@ the same frontier weighted-sum would, without the scaling problem.
 
 `f` is the multi-factor composite score from `smartbeta/multi_factor.py`
 (same IC-weighted composite, reused rather than a new factor definition
-invented for this step) and `w_prev` is the portfolio's weights entering
+invented here) and `w_prev` is the portfolio's weights entering
 this rebalance -- turnover is measured against an actual prior holding, not
 against zero.
 """

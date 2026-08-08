@@ -1,4 +1,4 @@
-"""Run Step 10 and write the consolidated evidence table and findings.
+"""Run the full comparison and write the consolidated evidence table and findings.
 
 Usage: ``python -m results.run_full_comparison``
 """

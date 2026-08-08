@@ -1,4 +1,4 @@
-"""Runs the Step 6 regime-conditional smart-beta comparison against real
+"""Runs the regime-conditional smart-beta comparison against real
 cached data: classifies calm/normal/volatile regimes on ^GSPC (real S&P 500
 index level), then reports each smart-beta variant's return/vol/Sharpe
 *separately per regime* -- the direct test of whether min-vol's real-world

@@ -28,7 +28,7 @@ def test_rebalance_only_trades_the_delta():
 
 
 def test_cost_fraction_scales_as_sqrt_of_aum():
-    """The core Step 7 finding, verified directly: total cost as a fraction
+    """The core capacity finding, verified directly: total cost as a fraction
     of AUM grows with sqrt(AUM), since dollar cost per trade scales with
     sqrt(trade size) and trade size scales linearly with AUM."""
     weights = pd.Series({"A": 0.5, "B": 0.5})

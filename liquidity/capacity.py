@@ -5,13 +5,13 @@ aggregates to a total cost as a fraction of AUM.
 
 `prev_weights=None` (or all-zero) prices the cost of *establishing* a
 portfolio from cash; a real `prev_weights` prices the cost of one
-*rebalancing* trade -- the same distinction the plan's Step 7 draws
-("establishing and rebalancing"). Because cost_fraction scales with
+*rebalancing* trade -- a real distinction between establishing and
+rebalancing a position. Because cost_fraction scales with
 sqrt(participation_rate) and participation_rate scales linearly with AUM,
 total dollar cost scales roughly as AUM^1.5, not AUM^1 -- cost as a
 *fraction* of the portfolio still grows (as sqrt(AUM)) even though it's a
-sublinear relationship, which is the concrete "a strategy that looks best
-on paper can lose its edge at realistic size" mechanism the plan points at.
+sublinear relationship, which is the concrete mechanism behind why a
+strategy that looks best on paper can lose its edge at realistic size.
 
 Names with no usable liquidity data (missing dollar-volume or realized-vol
 estimate) are excluded from the cost total and reported separately via

@@ -6,7 +6,7 @@ every historical day into one number regardless of market condition --
 21-day vol warm-up window stays unlabeled rather than silently inheriting a
 neighboring day's regime).
 
-This is the module that answers the plan's actual question for Step 6: does
+This is the module that answers the real question: does
 min-vol *specifically* outperform in the "volatile" regime -- the textbook
 theoretical justification for the low-volatility anomaly -- or does that
 effect wash out once returns are split by regime instead of pooled across

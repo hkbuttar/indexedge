@@ -20,7 +20,7 @@ def _synthetic_setup(n_assets=15, n_days=200, seed=0):
 
 
 def test_relaxing_turnover_budget_never_increases_tracking_error():
-    """The core correctness property the plan calls for: relaxing a
+    """The core correctness property multi-objective optimization requires: relaxing a
     constraint (larger turnover budget = strictly larger feasible region,
     since the old feasible set is a subset of the new one) can only weakly
     improve -- never worsen -- the achieved tracking error. This must hold

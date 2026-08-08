@@ -1,4 +1,4 @@
-"""Runs the Step 2 full cap-weighted replication baseline end-to-end against
+"""Runs the full cap-weighted replication baseline end-to-end against
 real cached data and reports tracking error -- the reference point every
 later strategy variant (optimized sampling, smart-beta, multi-objective) is
 measured against.

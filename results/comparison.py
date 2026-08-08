@@ -1,4 +1,4 @@
-"""Build the Step 10 comparison table and derive claims from its data."""
+"""Build the consolidated comparison table and derive claims from its data."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Runs the Step 5 multi-objective portfolio construction against real
+"""Runs the multi-objective portfolio construction against real
 cached data: at the most recent real quarterly rebalance date, trace the
 tracking-error-vs-turnover Pareto frontier at a few fixed factor-exposure
 targets, starting from the prior rebalance's realized multi-factor tilt

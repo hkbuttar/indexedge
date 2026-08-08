@@ -1,12 +1,13 @@
 """Converts a strategy's per-rebalance weight history into real,
 cost-adjusted daily returns, by applying `liquidity.capacity`'s square-root-
-law impact model (Step 7) to every actual rebalancing trade across the
+law impact model to every actual rebalancing trade across the
 whole backtest, not just a single snapshot rebalance.
 
 The one-time cost incurred at a rebalance is subtracted from the *first*
 trading day's return at or after that rebalance date -- modeling the cost
 as hitting the portfolio instantaneously at the moment of rebalancing,
-which is the standard convention (and the same one Step 7's single-snapshot
+which is the standard convention (and the same one
+`liquidity/run_capacity_analysis.py`'s single-snapshot
 analysis implicitly used). This is a disclosed simplification: real
 execution happens gradually over the trading day(s) around a rebalance, not
 in one instant, but spreading it out would need intraday data this project

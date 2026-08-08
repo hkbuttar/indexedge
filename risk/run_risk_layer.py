@@ -1,15 +1,15 @@
-"""Runs the Step 9 risk layer against real cached data:
+"""Runs the risk layer against real cached data:
 
 1. Brinson-Fachler active-risk decomposition (sector allocation vs.
    security selection vs. interaction) for the multi-factor tilt strategy
-   against Step 2's full replication, over one real recent rebalance
+   against full replication, over one real recent rebalance
    period, plus its factor-exposure differential.
 2. Kill-switch checks (tracking error limit, relative-drawdown limit) run
-   over each smart-beta variant's FULL cost-adjusted backtest history
-   (Step 8), showing which variants would actually have tripped it on real
+   over each smart-beta variant's FULL cost-adjusted backtest history,
+   showing which variants would actually have tripped it on real
    data and which stayed within the disclosed limits.
-3. A pointer to Step 6's regime-conditional breakdown as the fourth lens
-   the plan asks for (calm/normal/volatile performance), already built.
+3. A pointer to the regime-conditional breakdown as the fourth lens
+   for a full risk picture (calm/normal/volatile performance), already built.
 
 Usage: `python -m risk.run_risk_layer`
 """
@@ -85,7 +85,7 @@ def main(start: str, end: str) -> None:
         print(f"  {name:14s} {te_check.detail:45s} | {dd_check.detail:50s} | "
               f"triggered={switch.triggered} {switch.trigger_reasons}")
 
-    print("\nSee regime/run_regime_conditional.py for the fourth lens (calm/normal/volatile performance breakdown, Step 6).")
+    print("\nSee regime/run_regime_conditional.py for the fourth lens (calm/normal/volatile performance breakdown).")
 
 
 if __name__ == "__main__":

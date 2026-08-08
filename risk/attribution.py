@@ -7,7 +7,7 @@ factor-regression decomposition of dollar P&L for a discretionary
 multi-strategy book, a different problem -- see that module for why it
 doesn't transfer directly: it explains P&L by named risk factor, not active
 return by sector tilt vs. name selection). This is new methodology for the
-portfolio, built because the plan specifically asks for "sector tilt vs.
+portfolio, built to decompose active return into "sector tilt vs.
 name selection," which Brinson-Fachler is the standard answer to.
 
     Allocation_s = (w_p,s - w_b,s) * (R_b,s - R_b)   # sector over/underweight, times how that sector did vs the total benchmark
@@ -126,7 +126,7 @@ def factor_exposure_differential(
 ) -> float:
     """Portfolio's weighted-average multi-factor composite score exposure
     minus the benchmark's -- a risk-exposure diagnostic (how tilted is this
-    portfolio on the Step 4/5 composite factor, relative to the benchmark),
+    portfolio on the multi-factor composite score, relative to the benchmark),
     not a return decomposition like the Brinson breakdown above."""
     common = composite_score.dropna().index
     p = portfolio_weights.reindex(common).fillna(0.0)

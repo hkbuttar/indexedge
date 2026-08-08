@@ -1,5 +1,5 @@
-"""Runs the Step 3 walk-forward comparison of stratified, cvxpy-optimized,
-and LASSO sampling against Step 2's full replication, and prints the
+"""Runs the walk-forward comparison of stratified, cvxpy-optimized,
+and LASSO sampling against full replication, and prints the
 tracking-error-vs-name-count curve for all three methods.
 
 Target-count grid is capped at 200: LASSO's achievable name count is

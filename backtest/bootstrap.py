@@ -8,9 +8,9 @@ unfitted, disclosed parameter rather than something derived from the data:
 too short and it degenerates toward the naive i.i.d. bootstrap it exists to
 improve on (destroying real autocorrelation in daily strategy returns);
 too long and too few effectively-independent blocks exist to vary across
-resamples, understating uncertainty a different way. This is the plan's
-explicit ask for Step 8: reuse the statistical-rigor standard established in
-BookMaker, ExecEdge, and PairTrade Lab, not invent a fresh one.
+resamples, understating uncertainty a different way. This reuses the
+statistical-rigor standard established in BookMaker, ExecEdge, and
+PairTrade Lab, rather than inventing a fresh one.
 
 One real extension beyond the ported version: IndexEdge's strategies are
 compared against a benchmark (tracking error), which pairtrade-lab-1's

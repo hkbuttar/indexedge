@@ -1,20 +1,21 @@
-"""Runs the Step 10 consolidated results: cost-adjusted, bootstrap-validated
+"""Runs the consolidated results: cost-adjusted, bootstrap-validated
 performance for every strategy (the four smart-beta variants plus full
 replication itself, now cost-adjusted too via its own real rebalancing
-turnover) across three disclosed AUM levels, then states the plan's three
+turnover) across three disclosed AUM levels, then states three
 specific honest-comparison questions directly against these numbers plus
-the already-established findings from Steps 3, 6, and 7.
+the already-established findings from the sampling, regime, and capacity
+analyses.
 
-This does not attempt every cell of the plan's full theoretical cross-tab
+This does not attempt every cell of the full theoretical cross-tab
 (strategy x sampling method x name-count x turnover constraint x regime x
 AUM) as one literal table -- no real research report populates that either.
-Instead each axis is covered by the step that owns it (Step 3's
-tracking-error-vs-name-count curve, Step 6's regime-conditional breakdown,
-Step 7's capacity analysis), and this step's own new computation is the
-AUM-swept, cost-adjusted, bootstrapped comparison across strategies
-(including full replication as a strategy, not just the fixed benchmark
-every other step measures against) -- then synthesizes all of it into the
-three direct answers the plan asks for.
+Instead each axis is covered by the module that owns it (the
+tracking-error-vs-name-count curve in `replication/`, the regime-conditional
+breakdown in `regime/`, the capacity analysis in `liquidity/`), and this
+module's own new computation is the AUM-swept, cost-adjusted, bootstrapped
+comparison across strategies (including full replication as a strategy, not
+just the fixed benchmark everything else measures against) -- then
+synthesizes all of it into three direct answers.
 
 Usage: `python -m backtest.run_full_results`
 """
@@ -95,14 +96,14 @@ def main(start: str, end: str) -> pd.DataFrame:
         print(f"   AUM=${aum:>13,}: full_replication CAGR={fr_cagr:+.4f} (point estimate). Variants beating it: {verdict}")
     print("""
    But see the confidence intervals above: min_vol's CI has spanned zero at
-   every AUM level tested since Step 8, meaning "beats" or "loses to" full
+   every AUM level tested, meaning "beats" or "loses to" full
    replication on a point estimate alone overstates the certainty -- the
    bootstrap says min_vol's true cost-adjusted return at realistic AUM is
    not reliably distinguishable from full replication's or from zero.
 """)
 
     print("""2. Does regime-conditioning reveal that low-vol's edge is real but regime-specific, or does it wash out?
-   (Established in Step 6, regime/run_regime_conditional.py -- not recomputed here.)
+   (Established in regime/run_regime_conditional.py -- not recomputed here.)
    ANSWER: Neither -- it inverts. min_vol's volatility reduction IS real and holds in every
    regime (its realized vol was lowest of all variants in calm/normal/volatile alike). But its
    RETURN, relative to full replication, was worst specifically in the volatile regime
@@ -113,12 +114,12 @@ def main(start: str, end: str) -> pd.DataFrame:
 """)
 
     print("""3. Does the ML-based (LASSO) sampling method meaningfully differ from direct optimization?
-   (Established in Steps 3 and 7 -- not recomputed here.)
-   ANSWER: Yes, in both directions. On tracking error alone (Step 3, walk-forward, vs full
+   (Established in replication/run_sampling_comparison.py and liquidity/run_capacity_analysis.py -- not recomputed here.)
+   ANSWER: Yes, in both directions. On tracking error alone (walk-forward, vs full
    replication): LASSO is markedly worse than direct QP optimization at low name counts
    (16.4% TE at N=20 vs optimization's 3.8%, from L1 shrinkage bias under tight sparsity),
    converging to near-parity by N~=200 (1.70% vs 1.63%). But on realized turnover and cost
-   (Step 7, real rebalancing at N=60): LASSO's turnover (57%) was nearly double
+   (real rebalancing at N=60): LASSO's turnover (57%) was nearly double
    optimization's (31%), translating to a 13.6%/year cost drag at $1B AUM vs optimization's
    2.3%/year -- so even where LASSO looks competitive on tracking error, it is a genuinely
    different, and at realistic scale much costlier, portfolio, not just a noisier estimate of

@@ -1,1 +1,1 @@
-"""Consolidated Step 10 result tables and evidence-based findings."""
+"""Consolidated result tables and evidence-based findings."""

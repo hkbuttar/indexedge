@@ -1,5 +1,5 @@
-"""Runs the Step 7 capacity/impact analysis against real cached data: for
-every Step 3 sampling method and Step 4 smart-beta variant, computes the
+"""Runs the capacity/impact analysis against real cached data: for
+every sampling method and smart-beta variant, computes the
 real rebalancing cost (one actual turnover event, from one real quarterly
 rebalance to the next) at three disclosed hypothetical AUM levels, and
 reports how the annualized-return ranking shifts once that cost is priced
@@ -109,10 +109,10 @@ def main(start: str, end: str) -> pd.DataFrame:
     print(f"Rebalance from {t_prev.date()} to {t_curr.date()}:")
     print(results.to_string())
 
-    # Step 4's own gross annualized returns (smartbeta/run_smartbeta_comparison.py),
+    # Gross annualized returns from smartbeta/run_smartbeta_comparison.py,
     # reused here rather than re-simulated, to show the net-of-cost ranking directly.
     gross_returns = {"equal_weight": 0.147149, "min_vol": 0.103465, "quality": 0.190321, "multi_factor": 0.175754}
-    print("\nGross vs cost-adjusted annualized return (smart-beta variants only, using Step 4's gross figures):")
+    print("\nGross vs cost-adjusted annualized return (smart-beta variants only):")
     for aum in AUM_LEVELS:
         col = f"annualized_cost_drag_aum_{aum:,}"
         print(f"\n  AUM = ${aum:,}")

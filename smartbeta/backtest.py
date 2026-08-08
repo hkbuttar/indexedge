@@ -4,13 +4,13 @@ and multi-factor-tilt weights and hold to the next rebalance (buy-and-hold,
 same mechanic as `replication.full_replication` and
 `replication.sampling_evaluation`). Extracted out of
 `run_smartbeta_comparison.py` so `regime/`'s per-regime performance
-evaluation (Step 6) and `costs/`'s cost-adjustment (Step 8) can reuse the
+evaluation and `costs/`'s cost-adjustment can reuse the
 exact same simulation every variant's own summary stats are computed from,
 rather than re-deriving a second, potentially-inconsistent one.
 
 `_simulate` is the shared core; `simulate_all_variants` (unchanged
-signature/behavior from Step 4/6/7's call sites) and
-`simulate_all_variants_with_weights` (new, for Step 8's cost-adjustment,
+signature/behavior from its original call sites) and
+`simulate_all_variants_with_weights` (for cost-adjustment,
 which needs each rebalance's actual weight vector, not just the resulting
 returns) both wrap it rather than duplicating the loop.
 """

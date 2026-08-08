@@ -95,7 +95,7 @@ def simulate_cap_weighted_replication(
 def compute_weights_by_date(membership: pd.DataFrame, market_caps: pd.DataFrame) -> dict[pd.Timestamp, pd.Series]:
     """Full replication's own weight vector at every rebalance date --
     needed wherever full replication is treated as a strategy in its own
-    right (e.g. `costs/transaction_costs.py` cost-adjustment in Step 10),
+    right (e.g. `costs/transaction_costs.py` cost-adjustment),
     not just as the benchmark other strategies are measured against."""
     weights_by_date = {}
     for t in sorted(membership["rebalance_date"].unique()):

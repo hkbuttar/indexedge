@@ -1,7 +1,7 @@
 """Contract tests for the FastAPI layer, against the real app instance and
 real locally-cached data (`data/cache/`) -- no network calls happen inside
 any route handler (even `/api/replication/full`'s ^GSPC/^SP500TR lookups
-read from the same local index cache Step 1 populated), so these are
+read from the same local index cache the data pipeline populated), so these are
 naturally network-independent without needing to monkeypatch anything, the
 way riskdesk's equivalent tests must (riskdesk's routes fetch live).
 """
