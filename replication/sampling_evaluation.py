@@ -41,12 +41,47 @@ DEFAULT_LOOKBACK_DAYS = 252
 
 
 def simulate_holding_period(prices: pd.DataFrame, weights: pd.Series, period_start: pd.Timestamp, period_end: pd.Timestamp) -> pd.Series:
-    price_at_start = prices.loc[period_start, weights.index]
-    shares = weights / price_at_start
-    period_dates = prices.index[(prices.index >= period_start) & (prices.index <= period_end)]
-    period_prices = prices.loc[period_dates, weights.index].ffill()
-    values = period_prices.mul(shares, axis=1).sum(axis=1)
-    return values / values.iloc[0]
+    """Numpy integer-indexed, not repeated pandas `.loc[period_dates,
+    weights.index]` label-based fancy indexing -- same real fix, same real
+    cause, as `replication.full_replication.simulate_cap_weighted_replication`'s
+    own docstring: called up to ~160 times in a walk-forward loop
+    (4 strategies x ~40 rebalance dates), label-based indexing's per-call
+    Index/hash-table churn was a confirmed contributor to a production
+    out-of-memory failure, even though the per-call objects were verified
+    (via `gc.collect()`) to not be leaking in the reachability sense --
+    the allocator just wasn't returning freed memory to the OS between
+    many small, differently-shaped allocations."""
+    trading_dates = prices.index
+    column_position = {symbol: i for i, symbol in enumerate(prices.columns)}
+    col_idx = np.fromiter((column_position[s] for s in weights.index), dtype=np.intp, count=len(weights.index))
+
+    start_pos = trading_dates.searchsorted(period_start)
+    end_pos = trading_dates.searchsorted(period_end, side="right")
+    price_values = prices.to_numpy()
+
+    price_at_start = price_values[start_pos, col_idx]
+    shares = weights.to_numpy() / price_at_start
+
+    period_prices = price_values[start_pos:end_pos][:, col_idx]
+    # ffill within the period, matching the original's `.ffill()` on the
+    # pandas slice: propagate the last valid value forward along each column
+    mask = np.isnan(period_prices)
+    if mask.any():
+        idx = np.where(~mask, np.arange(period_prices.shape[0])[:, None], 0)
+        np.maximum.accumulate(idx, axis=0, out=idx)
+        period_prices = period_prices[idx, np.arange(period_prices.shape[1])]
+
+    # np.nansum, not `@` (matrix multiply): a real bug caught by a test on
+    # real data, not synthetic -- pandas' `.mul(shares, axis=1).sum(axis=1)`
+    # (the original implementation) has skipna=True by default, so one
+    # symbol with a NaN price (never traded yet as of period_start, most
+    # commonly) contributes zero to that date's sum rather than poisoning
+    # the whole row the way a plain dot product does. `shares` itself can
+    # be NaN for such a symbol (0/NaN division at price_at_start); np.nansum
+    # over the elementwise product treats that column as a zero
+    # contribution throughout the period, matching pandas exactly.
+    values = np.nansum(period_prices * shares, axis=1)
+    return pd.Series(values / values[0], index=trading_dates[start_pos:end_pos])
 
 
 def _forward_tracking_error(prices, weights, period_start, period_end, benchmark_returns) -> float:

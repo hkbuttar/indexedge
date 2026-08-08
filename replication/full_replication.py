@@ -52,13 +52,30 @@ def simulate_cap_weighted_replication(
 ) -> tuple[pd.Series, pd.Series, list[RebalanceCoverage]]:
     """Returns (portfolio_value indexed by trading date, normalized to 1.0 at
     the first rebalance date; daily returns derived from it; per-rebalance
-    coverage diagnostics)."""
+    coverage diagnostics).
+
+    Indexes into a single numpy array by integer position rather than
+    repeated pandas `.loc[period_dates, weights.index]` label-based fancy
+    indexing per rebalance period -- a real fix, not a style preference:
+    profiling a production out-of-memory failure traced ~700MB of peak RSS
+    growth to exactly this loop, one rebalance period at a time, even though
+    `gc.collect()` confirmed the per-iteration objects *were* being freed at
+    the Python level. Pandas' label-based `.loc` with a list of names
+    rebuilds a new Index/hash table every call; that churn of many
+    differently-shaped temporary allocations fragments the memory allocator
+    (freed memory kept mapped for reuse rather than returned to the OS),
+    which shows up as growing RSS despite no real leak. Plain integer
+    indexing into one already-allocated numpy array avoids that churn.
+    """
     prices = prices.ffill()
     rebalance_dates = sorted(membership_history["rebalance_date"].unique())
     if not rebalance_dates:
         raise ValueError("membership_history has no rebalance dates")
 
     trading_dates = prices.index
+    price_values = prices.to_numpy()
+    column_position = {symbol: i for i, symbol in enumerate(prices.columns)}
+
     value_segments = []
     coverage: list[RebalanceCoverage] = []
     portfolio_value = 1.0
@@ -77,14 +94,29 @@ def simulate_cap_weighted_replication(
         if weights.empty:
             continue
 
-        price_at_start = prices.loc[period_start, weights.index]
-        shares = (portfolio_value * weights) / price_at_start
+        col_idx = np.fromiter((column_position[s] for s in weights.index), dtype=np.intp, count=len(weights.index))
+        end_pos = trading_dates.searchsorted(period_end, side="right")
+        row_idx = slice(pos, end_pos)
 
-        period_dates = trading_dates[(trading_dates >= period_start) & (trading_dates <= period_end)]
-        period_prices = prices.loc[period_dates, weights.index]
-        period_values = period_prices.mul(shares, axis=1).sum(axis=1)
+        price_at_start = price_values[pos, col_idx]
+        shares = (portfolio_value * weights.to_numpy()) / price_at_start
+
+        period_prices = price_values[row_idx][:, col_idx]
+        # np.nansum, not `@` (matrix multiply) -- see
+        # `replication.sampling_evaluation.simulate_holding_period`'s
+        # docstring for the real bug this avoids: pandas' original
+        # `.mul(shares, axis=1).sum(axis=1)` skips NaN per element
+        # (skipna=True default), so one symbol with a NaN price contributes
+        # zero for that date rather than poisoning every date's sum via a
+        # plain dot product. `rebalance_weights` already filters to symbols
+        # with a valid market cap at the rebalance date, so this is a
+        # defensive-correctness fix here rather than one caught failing on
+        # real data the way `simulate_holding_period`'s was -- relying on
+        # today's candidate-filtering happening to avoid the gap is fragile.
+        period_values_arr = np.nansum(period_prices * shares, axis=1)
+        period_values = pd.Series(period_values_arr, index=trading_dates[row_idx])
         value_segments.append(period_values)
-        portfolio_value = period_values.iloc[-1]
+        portfolio_value = float(period_values_arr[-1])
 
     value_series = pd.concat(value_segments).sort_index()
     value_series = value_series[~value_series.index.duplicated(keep="first")]

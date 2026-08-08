@@ -70,7 +70,19 @@ def _load_state():
     current, changes = fetch_constituents_and_changes()
     sector_by_symbol = dict(zip(current["yfinance_symbol"], current["gics_sector"]))
 
-    volumes = pd.DataFrame({s: pd.read_parquet(f"data/cache/prices/{s}.parquet")["volume"] for s in prices.columns}).reindex(prices.index)
+    # Each symbol's volume series is sliced to prices.index's own (already
+    # lookback-trimmed) range before joining, not after: reading and
+    # retaining all 611 symbols' FULL history (back to 1962 for many) just
+    # to immediately reindex down to ~2015-2026 was a second, separate
+    # contributor to the same out-of-memory failure diagnosed in
+    # `replication/full_replication.py` and `smartbeta/run_smartbeta_comparison.py`
+    # -- trimming per-symbol before combining keeps only one small slice
+    # alive at a time instead of 611 full-length Series simultaneously.
+    volume_cutoff = prices.index.min()
+    volumes = pd.DataFrame({
+        s: pd.read_parquet(f"data/cache/prices/{s}.parquet")["volume"].pipe(lambda v: v[v.index >= volume_cutoff])
+        for s in prices.columns
+    }).reindex(prices.index)
     dollar_volume = avg_daily_dollar_volume(prices, volumes)
     daily_vol = pd.Series({col: (lambda v: v.iloc[-1] if v.notna().any() else float("nan"))(rolling_realized_vol(prices[col])) for col in prices.columns})
 

@@ -60,3 +60,56 @@ def test_simulate_holding_period_normalizes_to_one_at_start():
     value = simulate_holding_period(prices, weights, dates[0], dates[-1])
     assert value.iloc[0] == 1.0
     assert len(value) == 10
+
+
+def test_simulate_holding_period_forward_fills_gaps_like_pandas_ffill():
+    # Numpy-integer-indexed implementation (see its own docstring for why:
+    # a real production memory-fragmentation fix), verified here against
+    # hand-computed pandas .loc[...].ffill() on data with actual NaN gaps in
+    # both columns, since the other tests in this file have no gaps to
+    # exercise this path at all.
+    dates = pd.date_range("2024-01-01", periods=10)
+    prices = pd.DataFrame({
+        "A": [10.0, 11.0, np.nan, np.nan, 13.0, 14.0, 15.0, np.nan, 17.0, 18.0],
+        "B": [5.0, np.nan, 5.5, 6.0, np.nan, np.nan, 6.5, 7.0, 7.5, 8.0],
+    }, index=dates)
+    weights = pd.Series({"A": 0.5, "B": 0.5})
+
+    result = simulate_holding_period(prices, weights, dates[0], dates[-1])
+
+    price_at_start = prices.loc[dates[0], weights.index]
+    shares = weights / price_at_start
+    period_prices = prices.loc[dates[0]:dates[-1], weights.index].ffill()
+    values = period_prices.mul(shares, axis=1).sum(axis=1)
+    expected = values / values.iloc[0]
+
+    pd.testing.assert_series_equal(result, expected, check_names=False, check_freq=False)
+
+
+def test_simulate_holding_period_symbol_missing_at_period_start_does_not_poison_others():
+    # The actual production failure this reproduces: quality-weighted's real
+    # 345-symbol weight set included at least one symbol with no valid price
+    # AT the rebalance date itself (price_at_start -> NaN -> shares -> NaN
+    # for that symbol only). A plain `period_prices @ shares` dot product
+    # let that single NaN propagate through every date's sum, turning
+    # quality's ENTIRE return series into 0 real observations after
+    # .dropna() -- not caught by the other tests here since none of them
+    # have a NaN exactly at period_start. B is NaN throughout below,
+    # including at dates[0]; A alone must still produce a real value series.
+    dates = pd.date_range("2024-01-01", periods=10)
+    prices = pd.DataFrame({
+        "A": np.linspace(10, 20, 10),
+        "B": [np.nan] * 10,
+    }, index=dates)
+    weights = pd.Series({"A": 0.6, "B": 0.4})
+
+    result = simulate_holding_period(prices, weights, dates[0], dates[-1])
+
+    assert result.notna().all()
+    assert len(result) == 10
+    # matches a hand-computed A-only portfolio (B's NaN contribution excluded,
+    # same as pandas' skipna=True .sum(axis=1) would give)
+    a_only_shares = weights["A"] / prices["A"].iloc[0]
+    expected_values = prices["A"].to_numpy() * a_only_shares
+    expected = expected_values / expected_values[0]
+    assert np.allclose(result.to_numpy(), expected)

@@ -15,6 +15,35 @@ def test_rebalance_weights_normalizes_over_available_members_only():
     assert weights.sum() == pytest.approx(1.0)
 
 
+def test_a_nan_priced_symbol_does_not_poison_every_date():
+    # Real bug class, caught on real data (see
+    # tests/replication/test_sampling_evaluation.py's sibling test for the
+    # case that actually failed in production): a plain `period_prices @
+    # shares` matrix multiply, unlike pandas' `.mul(...).sum(axis=1)`
+    # (skipna=True by default), lets ONE symbol's NaN price poison every
+    # date's portfolio value, not just exclude that symbol's contribution.
+    #
+    # In `simulate_cap_weighted_replication` specifically, `rebalance_weights`
+    # already filters candidates to a valid (non-NaN) market cap at the
+    # rebalance date, and prices are globally ffilled before the loop, so
+    # this exact poisoning can't arise from realistic (mutually consistent)
+    # inputs -- this test deliberately passes an inconsistent `market_caps`
+    # (claims B is valid) against `prices` (B is NaN throughout) specifically
+    # to exercise the downstream sum step in isolation and lock in the fix
+    # as defensive correctness, not to model a real pipeline state.
+    dates = pd.bdate_range("2022-01-03", periods=10)
+    prices = pd.DataFrame({
+        "A": np.linspace(100, 110, 10), "B": [np.nan] * 10, "C": np.linspace(50, 55, 10),
+    }, index=dates)
+    market_caps = pd.DataFrame({"A": 1000.0, "B": 1000.0, "C": 1000.0}, index=dates)  # B claimed valid despite NaN price
+    membership = pd.DataFrame({"rebalance_date": [dates[0]] * 3, "symbol": ["A", "B", "C"]})
+
+    value, returns, coverage = simulate_cap_weighted_replication(prices, market_caps, membership)
+    assert value.notna().all()
+    assert len(returns) > 0
+    assert coverage[0].weighted_members == 3  # all three pass the (inconsistent) market-cap filter
+
+
 def test_full_replication_reproduces_benchmark_exactly_with_full_coverage():
     """The actual code-correctness check: build a synthetic 4-stock universe
     with 100% coverage and no data gaps, define the "index" as exactly the

@@ -35,13 +35,31 @@ from smartbeta.quality import compute_quality_scores
 
 PRICE_CACHE_DIR = Path(__file__).parent.parent / "data" / "cache" / "prices"
 
+# Trailing buffer kept before `start` so momentum/low-vol/min-vol/LASSO's
+# ~252-trading-day lookback has data even at the very first rebalance date
+# (252 trading days is ~365 calendar days; 400 leaves comfortable margin
+# for holidays/weekends). This isn't just a performance nicety: a real
+# production incident traced the cause to this exact panel NOT being
+# trimmed -- `data/cache/prices/` holds each symbol's FULL history since
+# inception (`period="max"` in `data/prices.py`, decades back for many
+# blue chips), and loading all of it into memory as several
+# (16258-row x 611-col) float64 DataFrames (prices, market_caps,
+# fwd_returns, and one per factor) pushed a Render free-tier instance
+# (512MB) to an out-of-memory kill at startup -- confirmed locally via
+# `resource.getrusage`: untrimmed, `backend.main._load_state()` peaked
+# at 4.1GB RSS; the four largest retained DataFrames alone were ~480MB.
+LOOKBACK_BUFFER_DAYS = 400
 
-def _load_cached_prices() -> pd.DataFrame:
+
+def _load_cached_prices(start_ts: pd.Timestamp | None = None) -> pd.DataFrame:
     histories = {}
     for path in PRICE_CACHE_DIR.glob("*.parquet"):
         df = pd.read_parquet(path)
         if not df.empty:
-            histories[path.stem] = df
+            if start_ts is not None:
+                df = df[df.index >= start_ts - pd.Timedelta(days=LOOKBACK_BUFFER_DAYS)]
+            if not df.empty:
+                histories[path.stem] = df
     return to_wide_panel(histories, field="close")
 
 
@@ -50,7 +68,7 @@ def build_backtest_inputs(start: str, end: str):
     both this script and `regime/run_regime_conditional.py` build it
     identically instead of duplicating the wiring."""
     start_ts, end_ts = pd.Timestamp(start), pd.Timestamp(end)
-    prices = _load_cached_prices()
+    prices = _load_cached_prices(start_ts)
 
     current, changes = fetch_constituents_and_changes()
     rebalance_dates = quarterly_rebalance_dates(start_ts, end_ts)
