@@ -1,0 +1,53 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+#
+# Same pattern as alpha-signal-lab/render.yaml (this portfolio's own
+# established convention): single Python web service running the FastAPI
+# backend behind uvicorn. No database block, unlike alpha-signal-lab's --
+# alpha-signal-lab's Postgres holds live paper-trading state this project
+# has no equivalent of; IndexEdge's dataset is real market data, fetched
+# fresh at build time (`data/cache/` is gitignored, not committed) and
+# recomputed in-process at runtime, not persisted externally.
+#
+# `data.run_ingest` in buildCommand is a real, disclosed tradeoff, chosen
+# deliberately over committing a frozen `data/cache/` snapshot (this
+# portfolio's other option, used by riskdesk/execedge/pairtrade-lab-1 for
+# sibling repos with no live data source of their own): it keeps every
+# deploy's data current rather than frozen at commit time, at the cost of
+# (1) ~5-6 minutes added to every build (611+ symbols' full price/shares/
+# fundamentals history via yfinance, one HTTP call per symbol for the
+# slower endpoints -- see data/prices.py, data/fundamentals.py,
+# data/shares_outstanding.py's own docstrings for why there's no batch
+# alternative), and (2) a real dependency on yfinance actually being
+# reachable and not rate-limiting Render's build-server IP range, which is
+# a genuine risk, not a hypothetical one -- if a build fails here, that's
+# the first thing to check, not application code.
+#
+# --start/--end match `backend/main.py`'s own hardcoded BACKTEST_START/
+# BACKTEST_END exactly, so the ingested universe/date range is precisely
+# what the backend will request -- not a superset fetched "just in case."
+#
+# `healthCheckPath: /health` matters more here than in most of this
+# portfolio's other backends: `backend/main.py`'s `_STATE` is computed
+# ONCE at import time (~20-25s locally once data is cached: point-in-time
+# reconstruction, market-cap panel, full smart-beta simulation over the
+# whole 2016-2026 backtest window), not per-request -- see that module's
+# own docstring for why. That means the service won't answer ANY request,
+# including a health check, until that one-time startup finishes on top of
+# whatever the build step already took. Render's default health-check
+# grace period should cover it, but a colder/slower instance type could
+# make a first deploy look like it's failing when it's just still
+# finishing that initial computation.
+services:
+  - type: web
+    name: indexedge-api
+    runtime: python
+    plan: free
+    rootDir: .
+    buildCommand: pip install -r requirements.txt && python -m data.run_ingest --start 2016-01-01 --end 2026-08-07
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ALLOWED_ORIGINS
+        sync: false # set to your Vercel deployment URL(s), comma-separated, after the frontend is deployed
