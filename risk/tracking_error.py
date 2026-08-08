@@ -18,7 +18,7 @@ def active_returns(portfolio_returns: pd.Series, benchmark_returns: pd.Series) -
     """Aligns on the intersection of both indices (inner join) before
     differencing -- silently comparing on a mismatched calendar would
     understate or fabricate tracking error rather than error out."""
-    aligned = pd.concat([portfolio_returns, benchmark_returns], axis=1, join="inner")
+    aligned = pd.concat([portfolio_returns, benchmark_returns], axis=1, join="inner").dropna()
     aligned.columns = ["portfolio", "benchmark"]
     return aligned["portfolio"] - aligned["benchmark"]
 
@@ -45,7 +45,7 @@ def summarize_tracking(
     portfolio_returns: pd.Series, benchmark_returns: pd.Series, periods_per_year: int = DEFAULT_PERIODS_PER_YEAR
 ) -> TrackingSummary:
     diffs = active_returns(portfolio_returns, benchmark_returns)
-    aligned = pd.concat([portfolio_returns, benchmark_returns], axis=1, join="inner")
+    aligned = pd.concat([portfolio_returns, benchmark_returns], axis=1, join="inner").dropna()
     aligned.columns = ["portfolio", "benchmark"]
 
     cumulative_portfolio = (1 + aligned["portfolio"]).prod() - 1
